@@ -151,6 +151,7 @@ app.post('/generate-pdf', authMiddleware, async (req, res) => {
     doc.text(`- ${service.description}: ${service.price} x ${service.quantity}`);
   });
 
+  doc.download(`Invoice_${Date.now()}.pdf`);
   doc.end();
 
   await invoice.save();
