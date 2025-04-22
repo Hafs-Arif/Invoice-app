@@ -108,7 +108,7 @@
     const password = document.getElementById('password').value;
     const isLogin = document.getElementById('authTitle').innerText === 'Login';
 
-    const response = await fetch(`http://localhost:10000/api/${isLogin ? 'login' : 'signup'}`, {
+    const response = await fetch(`https://invoice-app-netz.onrender.com/api/${isLogin ? 'login' : 'signup'}`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ email, password })
@@ -143,7 +143,7 @@
       }]
     };
 
-    const response = await fetch('http://localhost:10000/generate-pdf', {
+    const response = await fetch('https://invoice-app-netz.onrender.com/generate-pdf', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -166,7 +166,7 @@
   });
 
   async function fetchHistory() {
-    const response = await fetch('http://localhost:10000/api/invoices', {
+    const response = await fetch('https://invoice-app-netz.onrender.com/api/invoices', {
       headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
     });
 
