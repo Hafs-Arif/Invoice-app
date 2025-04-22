@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>InvoicePro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+  <nav class="bg-white shadow-md p-4 flex justify-between">
+    <div class="font-bold text-lg">invoice generator</div>
+    <div class="font-bold text-lg">Invoice generator Pro</div>
+    <div id="navLinks">
+      <a onclick="navigate('dashboard')" class="mx-2 cursor-pointer">Dashboard</a>
+      <a onclick="navigate('create')" class="mx-2 cursor-pointer">Create Invoice</a>
+      <a onclick="navigate('history')" class="mx-2 cursor-pointer">History</a>
+      <button onclick="logout()" class="mx-2 text-red-500 cursor-pointer">Logout</button>
+    </div>
+  </nav>
+
+  <!-- Signup/Login -->
+  <section id="authSection" class="p-8 flex justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+      <h1 class="text-2xl font-bold mb-6 text-center" id="authTitle">Login</h1>
+      <form id="authForm" class="space-y-4">
+        <input class="w-full border border-gray-300 p-2 rounded" type="email" id="email" placeholder="Email" required>
+        <input class="w-full border border-gray-300 p-2 rounded" type="password" id="password" placeholder="Password" required>
+        <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition">
+          Login
+        </button>
+        <p class="text-center text-sm mt-4">
+          <span id="toggleAuth" class="text-blue-600 cursor-pointer hover:underline">Don't have an account? Sign up</span>
+        </p>
+      </form>
+    </div>
+  </section>
+
+  <!-- Dashboard -->
+  <section id="dashboard" class="p-8 hidden">
+    <h1 class="text-2xl font-bold mb-4">Welcome, Freelancer!</h1>
+    <button onclick="navigate('create')" class="bg-blue-500 text-white px-4 py-2 rounded">Create New Invoice</button>
+  </section>
+
+  <!-- Create Invoice -->
+  <section id="create" class="p-8 hidden">
+    <div class="min-h-screen flex items-center justify-center">
+      <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <h1 class="text-2xl font-bold mb-6 text-center">Create Invoice</h1>
+        <form id="invoiceForm" class="space-y-4">
+          <input class="w-full border border-gray-300 p-2 rounded" type="text" id="yourName" placeholder="Your Name" required>
+          <input class="w-full border border-gray-300 p-2 rounded" type="text" id="yourAddress" placeholder="Your Address" required>
+          <input class="w-full border border-gray-300 p-2 rounded" type="text" id="clientName" placeholder="Client Name" required>
+          <input class="w-full border border-gray-300 p-2 rounded" type="text" id="clientAddress" placeholder="Client Address" required>
+
+          <h3 class="text-lg font-semibold mt-4">Service Details</h3>
+          <input class="w-full border border-gray-300 p-2 rounded" type="text" id="description" placeholder="Service Description" required>
+          <input class="w-full border border-gray-300 p-2 rounded" type="number" id="price" placeholder="Price" required>
+          <input class="w-full border border-gray-300 p-2 rounded" type="number" id="quantity" placeholder="Quantity" required>
+
+          <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition">
+            Generate Invoice
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Invoice History -->
+  <section id="history" class="p-8 hidden">
+    <h1 class="text-2xl font-bold mb-4">Invoice History</h1>
+    <div id="invoiceList" class="space-y-4"></div>
+  </section>
+
+<script>
+  const token = localStorage.getItem('token');
+  const authSection = document.getElementById('authSection');
+  const dashboard = document.getElementById('dashboard');
+  const create = document.getElementById('create');
+  const history = document.getElementById('history');
+
+  function navigate(page) {
+    [dashboard, create, history].forEach(s => s.classList.add('hidden'));
+    document.getElementById(page).classList.remove('hidden');
+    if (page === 'history') fetchHistory();
+  }
+
+  function logout() {
+    localStorage.removeItem('token');
+    location.reload();
+  }
+
+  document.getElementById('toggleAuth').addEventListener('click', () => {
+    const title = document.getElementById('authTitle');
+    const btn = document.querySelector('#authForm button');
+    if (title.innerText === 'Login') {
+      title.innerText = 'Sign Up';
+      btn.innerText = 'Sign Up';
+    } else {
+      title.innerText = 'Login';
+      btn.innerText = 'Login';
+    }
+  });
+
+  document.getElementById('authForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const isLogin = document.getElementById('authTitle').innerText === 'Login';
+
+    const response = await fetch(`http://localhost:5000/api/${isLogin ? 'login' : 'signup'}`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      if (isLogin) {
+        localStorage.setItem('token', data.token);
+        authSection.classList.add('hidden');
+        dashboard.classList.remove('hidden');
+      } else {
+        alert('Signup successful, please login now.');
+        document.getElementById('toggleAuth').click();
+      }
+    } else {
+      alert(data.error);
+    }
+  });
+
+  document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const invoiceData = {
+      yourName: document.getElementById('yourName').value,
+      yourAddress: document.getElementById('yourAddress').value,
+      clientName: document.getElementById('clientName').value,
+      clientAddress: document.getElementById('clientAddress').value,
+      services: [{
+        description: document.getElementById('description').value,
+        price: +document.getElementById('price').value,
+        quantity: +document.getElementById('quantity').value
+      }]
+    };
+
+    const response = await fetch('http://localhost:5000/generate-pdf', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify(invoiceData)
+    });
+
+    if (response.ok) {
+      const blob = await response.blob();
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = 'invoice.pdf';
+      link.click();
+      alert('Invoice generated successfully.');
+    } else {
+      const err = await response.json();
+      alert(err.error || 'Failed to generate invoice.');
+    }
+  });
+
+  async function fetchHistory() {
+    const response = await fetch('http://localhost:5000/api/invoices', {
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+    });
+
+    if (user.plan === 'free') {
+      invoices <=1 ;
+      alert('You have reached the limit of 1 invoice. Please upgrade your plan to generate more invoices.');
+    }
+
+    const invoices = await response.json();
+    const container = document.getElementById('invoiceList');
+    container.innerHTML = '';
+
+    if (invoices.length === 0) {
+      container.innerHTML = '<p>No invoices found.</p>';
+      return;
+    }
+
+    invoices.forEach(inv => {
+      const div = document.createElement('div');
+      div.className = 'p-4 bg-white rounded shadow';
+      div.innerHTML = `
+        <h3 class="font-bold">${inv.clientName}</h3>
+        <p>Total: Rs.${inv.totalAmount}</p>
+        <p>Date: ${new Date(inv.createdAt).toLocaleString()}</p>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  if (token) {
+    authSection.classList.add('hidden');
+    dashboard.classList.remove('hidden');
+  }
+</script>
+
+</body>
+</html>
